@@ -19,10 +19,13 @@ qBr <- function(df, variable, rnd) {
 ######LOAD DATA#####
 #airports data
 airports <- read.csv("D:/aviation2020/usairports.csv")
+airports_metro <- read.csv("D:/aviation2020/airport_metro.csv")
 #BTS data
 mar2019 <- read.csv("D:/aviation2020/032019.csv")
 mar2020 <- read.csv("D:/aviation2020/032020.csv")
 all <- read.csv("D:/aviation2020/od_with_na.csv")
+mkt2019 <- read.csv("D:/aviation2020/032019_new.csv")
+mkt2020 <- read.csv("D:/aviation2020/032020_new.csv")
 #processed data
 monthchange_rank <- read.csv("D:/aviation2020/rank_monthchange.csv")
 
@@ -231,9 +234,9 @@ weekly <- merge(weekly_19_airline, weekly_20_airline, by = "CARRIER")
 
 weekly_chg <- weekly%>%
   mutate(wk1_chg = wk1_20 - wk1_19,
-         wk2_chg = wk1_20 - wk2_19,
-         wk3_chg = wk1_20 - wk3_19,
-         wk4_chg = wk1_20 - wk4_19)%>%
+         wk2_chg = wk2_20 - wk2_19,
+         wk3_chg = wk3_20 - wk3_19,
+         wk4_chg = wk4_20 - wk4_19)%>%
   select(CARRIER,
          wk1_chg,
          wk2_chg,
@@ -242,13 +245,13 @@ weekly_chg <- weekly%>%
 
 weekly_pct_chg <- weekly%>%
   mutate(wk1_chg = wk1_20 - wk1_19,
-         wk2_chg = wk1_20 - wk2_19,
-         wk3_chg = wk1_20 - wk3_19,
-         wk4_chg = wk1_20 - wk4_19,
+         wk2_chg = wk2_20 - wk2_19,
+         wk3_chg = wk3_20 - wk3_19,
+         wk4_chg = wk4_20 - wk4_19,
          wk1_pct_chg = wk1_chg / wk1_19,
-         wk2_pct_chg = wk2_chg / wk1_19,
-         wk3_pct_chg = wk3_chg / wk1_19,
-         wk4_pct_chg = wk4_chg / wk1_19)%>%
+         wk2_pct_chg = wk2_chg / wk2_19,
+         wk3_pct_chg = wk3_chg / wk3_19,
+         wk4_pct_chg = wk4_chg / wk4_19)%>%
   select(CARRIER,
          wk1_pct_chg,
          wk2_pct_chg,
@@ -553,9 +556,8 @@ new[new$AP2=="XWA",]$LON_2 <- -103.7424
 US <- get_map("United States", zoom = 3)
 ggmap(US)
 
-library(usmap)
+#####metro and merge variables#####
+ap_metro <- airports_metro%>%
+  filter(!is.na(Metroname))
 
-usmap <- plot_usmap(regions = "states")
-  
-ggplot(usmap)+usairports+
-  newroutes
+
