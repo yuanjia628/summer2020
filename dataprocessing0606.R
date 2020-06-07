@@ -21,14 +21,16 @@ qBr <- function(df, variable, rnd) {
 '%ni%' <- Negate('%in%')
 
 ######LOAD DATA#####
-#airports data
-airports <- read.csv("D:/aviation2020/usairports.csv")
-airports_metro <- read.csv("D:/aviation2020/airport_metro.csv")
-regions <- read.csv("D:/aviation2020/regions.csv")
-categories <- read.csv("D:/aviation2020/airportsize2019.csv")
+#airports and metro data
+airports_metro <- read.csv("airport_metro.csv") %>% 
+  dplyr::select(-X,-(flights19:rankchange))
+  
+#regions <- read.csv("regions.csv")
+categories <- read.csv("airportsize2019.csv")
+
 #BTS data <- *****INSERT RAW DATA HERE*****
-mkt2019 <- read.csv("D:/aviation2020/032019_new.csv")
-mkt2020 <- read.csv("D:/aviation2020/032020_new.csv")
+mkt2019 <- read.csv("032019_new.csv")
+mkt2020 <- read.csv("032020_new.csv")
 
 #HI,PR,AS airports
 eliminated_AP <- c("ADQ", "AKN", "ANC", "BET", "BQN", "ENA", "FAI",
@@ -37,7 +39,7 @@ eliminated_AP <- c("ADQ", "AKN", "ANC", "BET", "BQN", "ENA", "FAI",
 
 
 #####2019 data cleaning#####
-#as.character
+#as.character THIS IS NOT NEEDED!
 mkt2019$ORIGIN <- as.character(mkt2019$ORIGIN)
 mkt2019$DEST <- as.character(mkt2019$DEST)
 
@@ -46,8 +48,8 @@ mar2019 <- mkt2019%>%
   mutate(AP1 = ifelse(pmin(as.character(ORIGIN),as.character(DEST)) == ORIGIN, ORIGIN, DEST),
          AP2 = ifelse(pmax(as.character(ORIGIN),as.character(DEST)) == ORIGIN, ORIGIN, DEST))
   
-#select necesarry variables and get lat and lon for AP1
-mar2019 <- left_join(mar2019, airports, by = c("AP1" = "code"))%>%
+#select necessary variables and get lat and lon for AP1
+mar2019 <- left_join(mar2019, airports_metro, by = c("AP1" = "code"))%>%
   dplyr::select(YEAR,
          DAY_OF_MONTH,
          DAY_OF_WEEK,
@@ -69,7 +71,7 @@ mar2019 <- left_join(mar2019, airports, by = c("AP1" = "code"))%>%
          LON_O = long)
 
 #get lat and lon for AP2
-mar2019 <- left_join(mar2019, airports, by = c("AP2" = "code"))%>%
+mar2019 <- left_join(mar2019, airports_metro, by = c("AP2" = "code"))%>%
   dplyr::select(YEAR,
          DAY_OF_MONTH,
          DAY_OF_WEEK,
@@ -106,7 +108,7 @@ mar2020 <- mkt2020%>%
          AP2 = ifelse(pmax(as.character(ORIGIN),as.character(DEST)) == ORIGIN, ORIGIN, DEST))
 
 #select necesarry variables and get lat and lon for AP1
-mar2020 <- left_join(mar2020, airports, by = c("ORIGIN" = "code"))%>%
+mar2020 <- left_join(mar2020, airports_metro, by = c("ORIGIN" = "code"))%>%
   dplyr::select(YEAR,
          DAY_OF_MONTH,
          DAY_OF_WEEK,
@@ -128,7 +130,7 @@ mar2020 <- left_join(mar2020, airports, by = c("ORIGIN" = "code"))%>%
          LON_O = long)
 
 #get lat and lon for AP2
-mar2020 <- left_join(mar2020, airports, by = c("AP2" = "code"))%>%
+mar2020 <- left_join(mar2020, airports_metro, by = c("AP2" = "code"))%>%
   dplyr::select(YEAR,
          DAY_OF_MONTH,
          DAY_OF_WEEK,
@@ -155,107 +157,81 @@ flight20 <- mar2020%>%
   summarise(flight20 = n())
 
 #merge 2019 and 2020 routes info
-all_new <- merge(flight19, flight20, by = "OD", all = TRUE)%>%
+RTdata <- merge(flight19, flight20, by = "OD", all = TRUE)%>%
   dplyr::select(OD, flight19, flight20)
 
 
-#get weekly data - 2019
-Wk1_19 <- mar2019%>%
-  filter(DAY_OF_MONTH == 3 | DAY_OF_MONTH == 4 | DAY_OF_MONTH == 5 | DAY_OF_MONTH == 6 | DAY_OF_MONTH == 7 | DAY_OF_MONTH == 8 | DAY_OF_MONTH == 9)
-
-Wk2_19 <- mar2019%>%
-  filter(DAY_OF_MONTH == 10 | DAY_OF_MONTH == 11 | DAY_OF_MONTH == 12 | DAY_OF_MONTH == 13 | DAY_OF_MONTH == 14 | DAY_OF_MONTH == 15 | DAY_OF_MONTH == 16)
-
-Wk3_19 <- mar2019%>%
-  filter(DAY_OF_MONTH == 17 | DAY_OF_MONTH == 18 | DAY_OF_MONTH == 19 | DAY_OF_MONTH == 20 | DAY_OF_MONTH == 21 | DAY_OF_MONTH == 22 | DAY_OF_MONTH == 23)
-
-Wk4_19 <- mar2019%>%
-  filter(DAY_OF_MONTH == 24 | DAY_OF_MONTH == 25 | DAY_OF_MONTH == 26 | DAY_OF_MONTH == 27 | DAY_OF_MONTH == 28 | DAY_OF_MONTH == 29 | DAY_OF_MONTH == 30)
-
 #summarize weekly 2019 by routes
-wk1_19_od <- Wk1_19%>%
+wk1_19_od <- mar2019%>%
+  filter(DAY_OF_MONTH >= 3 & DAY_OF_MONTH <= 9) %>% 
   group_by(OD)%>%
-  summarise(n=n())%>%
-  rename(wk1_19 = n)
+  summarise(wk1_19=n())
 
-wk2_19_od <- Wk2_19%>%
+wk2_19_od <- mar2019%>%
+  filter(DAY_OF_MONTH >= 10 & DAY_OF_MONTH <= 16) %>% 
   group_by(OD)%>%
-  summarise(n=n())%>%
-  rename(wk2_19 = n)
+  summarise(wk2_19=n())
 
-wk3_19_od <- Wk3_19%>%
+wk3_19_od <- mar2019%>%
+  filter(DAY_OF_MONTH >= 17 & DAY_OF_MONTH <= 23) %>% 
   group_by(OD)%>%
-  summarise(n=n())%>%
-  rename(wk3_19 = n)
+  summarise(wk3_19=n())
 
-wk4_19_od <- Wk4_19%>%
+wk4_19_od <- mar2019%>%
+  filter(DAY_OF_MONTH >= 24 & DAY_OF_MONTH <= 30) %>% 
   group_by(OD)%>%
-  summarise(n=n())%>%
-  rename(wk4_19 = n)
+  summarise(wk4_19=n())
 
-
-#weekly data - 2020
-Wk1_20 <- mar2020%>%
-  filter(DAY_OF_MONTH == 1 | DAY_OF_MONTH == 2 | DAY_OF_MONTH == 3 | DAY_OF_MONTH == 4 | DAY_OF_MONTH == 5 | DAY_OF_MONTH == 6 | DAY_OF_MONTH == 7)
-
-Wk2_20 <- mar2020%>%
-  filter(DAY_OF_MONTH == 8 | DAY_OF_MONTH == 9 | DAY_OF_MONTH == 10 | DAY_OF_MONTH == 11 | DAY_OF_MONTH == 12 | DAY_OF_MONTH == 13 | DAY_OF_MONTH == 14)
-
-Wk3_20 <- mar2020%>%
-  filter(DAY_OF_MONTH == 15 | DAY_OF_MONTH == 16 | DAY_OF_MONTH == 17 | DAY_OF_MONTH == 18 | DAY_OF_MONTH == 19 | DAY_OF_MONTH == 20 | DAY_OF_MONTH == 21)
-
-Wk4_20 <- mar2020%>%
-  filter(DAY_OF_MONTH == 22 | DAY_OF_MONTH == 23 | DAY_OF_MONTH == 24 | DAY_OF_MONTH == 25 | DAY_OF_MONTH == 26 | DAY_OF_MONTH == 27 | DAY_OF_MONTH == 28)
 
 #summarize weekly 2020 by routes
-wk1_20_od <- Wk1_20%>%
+wk1_20_od <- mar2020%>%
+  filter(DAY_OF_MONTH >= 1 & DAY_OF_MONTH <= 7) %>% 
   group_by(OD)%>%
-  summarise(n=n())%>%
-  rename(wk1_20 = n)
+  summarise(wk1_20=n())
 
-wk2_20_od <- Wk2_20%>%
+wk2_20_od <- mar2020%>%
+  filter(DAY_OF_MONTH >= 8 & DAY_OF_MONTH <= 14) %>% 
   group_by(OD)%>%
-  summarise(n=n())%>%
-  rename(wk2_20 = n)
+  summarise(wk2_20=n())
 
-wk3_20_od <- Wk3_20%>%
+wk3_20_od <- mar2020%>%
+  filter(DAY_OF_MONTH >= 15 & DAY_OF_MONTH <= 21) %>% 
   group_by(OD)%>%
-  summarise(n=n())%>%
-  rename(wk3_20 = n)
+  summarise(wk3_20=n())
 
-wk4_20_od <- Wk4_20%>%
+wk4_20_od <- mar2020%>%
+  filter(DAY_OF_MONTH >= 22 & DAY_OF_MONTH <= 28) %>% 
   group_by(OD)%>%
-  summarise(n=n())%>%
-  rename(wk4_20 = n)
+  summarise(wk4_20=n())
 
-#merge weekly data to all_new
-all_new <- merge(all_new, wk1_19_od, by = "OD", all = T)
-all_new <- merge(all_new, wk1_20_od, by = "OD", all = T)
-all_new <- merge(all_new, wk2_19_od, by = "OD", all = T)
-all_new <- merge(all_new, wk2_20_od, by = "OD", all = T)
-all_new <- merge(all_new, wk3_19_od, by = "OD", all = T)
-all_new <- merge(all_new, wk3_20_od, by = "OD", all = T)
-all_new <- merge(all_new, wk4_19_od, by = "OD", all = T)
-all_new <- merge(all_new, wk4_20_od, by = "OD", all = T)
+#merge weekly data to RTdata
+RTdata <- merge(RTdata, wk1_19_od, by = "OD", all = T)
+RTdata <- merge(RTdata, wk1_20_od, by = "OD", all = T)
+RTdata <- merge(RTdata, wk2_19_od, by = "OD", all = T)
+RTdata <- merge(RTdata, wk2_20_od, by = "OD", all = T)
+RTdata <- merge(RTdata, wk3_19_od, by = "OD", all = T)
+RTdata <- merge(RTdata, wk3_20_od, by = "OD", all = T)
+RTdata <- merge(RTdata, wk4_19_od, by = "OD", all = T)
+RTdata <- merge(RTdata, wk4_20_od, by = "OD", all = T)
 
 #turn NA into 0s
-all_new[is.na(all_new)] <- 0
+RTdata[is.na(RTdata)] <- 0
 
-#filter out flights that didn't exist in 2019 and add more calculations
-all_new <- all_new%>%
-  filter(flight19 != 0)%>%
-  mutate(monthly_chg = (flight20 - flight19)/flight19,
-         wk1_chg = (wk1_20 - wk1_19)/wk1_19,
-         wk2_chg = (wk2_20 - wk2_19)/wk2_19,
-         wk3_chg = (wk3_20 - wk3_19)/wk3_19,
-         wk4_chg = (wk4_20 - wk4_19)/wk4_19)
+#Not to calculate change here, 0,Inf and NaN issue
+# RTdata <- RTdata%>%
+#   filter(flight19 != 0)%>%
+#   mutate(monthly_chg = (flight20 - flight19)/flight19*100,
+#          wk1_chg = (wk1_20 - wk1_19)/wk1_19*100,
+#          wk2_chg = (wk2_20 - wk2_19)/wk2_19*100,
+#          wk3_chg = (wk3_20 - wk3_19)/wk3_19*100,
+#          wk4_chg = (wk4_20 - wk4_19)/wk4_19*100)
 
 #break OD data into single airport data
-all_new <- all_new%>%
+RTdata <- RTdata%>%
   mutate(ODpairs = OD)%>%
   separate(OD, c('AP1', 'AP2'), sep = '\\s*-\\s*')
 
-all_new_AP1 <- all_new%>%
+AP1_tmp <- RTdata%>%
   group_by(AP1)%>%
   summarise(flight19 = sum(flight19),
             flight20 = sum(flight20),
@@ -268,7 +244,7 @@ all_new_AP1 <- all_new%>%
             wk3_20 = sum(wk3_20),
             wk4_20 = sum(wk4_20))
 
-all_new_AP2 <- all_new%>%
+AP2_tmp <- RTdata%>%
   group_by(AP2)%>%
   summarise(flight19 = sum(flight19),
             flight20 = sum(flight20),
@@ -281,11 +257,11 @@ all_new_AP2 <- all_new%>%
             wk3_20 = sum(wk3_20),
             wk4_20 = sum(wk4_20))
 
-all_new_AP <- merge(all_new_AP1, all_new_AP2, by.x = "AP1", by.y = "AP2", all = TRUE)
-all_new_AP[is.na(all_new_AP)] <- 0
+APdata <- merge(AP1_tmp, AP2_tmp, by.x = "AP1", by.y = "AP2", all = TRUE)
+APdata[is.na(APdata)] <- 0
 
 #calculate the final data using airport as the unit of analysis
-all_new_AP <- all_new_AP%>%
+APdata <- APdata%>%
   mutate(flight19 = flight19.x + flight19.y,
          flight20 = flight20.x + flight20.y,
          wk1_19 = wk1_19.x + wk1_19.y,
@@ -309,18 +285,20 @@ all_new_AP <- all_new_AP%>%
          wk4_20)%>%
   rename(code = AP1)
 
-all_new_AP <- all_new_AP%>%
-  mutate(monthly_chg = (flight20 - flight19)/flight19*100,
-         wk1_chg = (wk1_20 - wk1_19)/wk1_19*100,
-         wk2_chg = (wk2_20 - wk2_19)/wk2_19*100,
-         wk3_chg = (wk3_20 - wk3_19)/wk3_19*100,
-         wk4_chg = (wk4_20 - wk4_19)/wk4_19*100,
-         rank19 = rank(-flight19, ties.method = "min"),
-         rank20 = rank(-flight20, ties.method = "min"),
-         rank_chg = rank20 - rank19)
+APdata <- APdata%>%
+  mutate(rank19 = rank(-flight19, ties.method = "min"),
+         rank20 = rank(-flight20, ties.method = "min"))
+
+# monthly_chg = (flight20 - flight19)/flight19*100,
+# wk1_chg = (wk1_20 - wk1_19)/wk1_19*100,
+# wk2_chg = (wk2_20 - wk2_19)/wk2_19*100,
+# wk3_chg = (wk3_20 - wk3_19)/wk3_19*100,
+# wk4_chg = (wk4_20 - wk4_19)/wk4_19*100,
+# rank_chg = rank20 - rank19
+
 
 ######hubs and multi_ap#####
-all_new_AP <- all_new_AP%>%
+APdata <- APdata%>%
   mutate(hub = ifelse(code %in% c("ANC","ATL","BOS","CLT","CVG","DCA","DEN","DFW","DTW","EWR","IAD","IAH","JFK","LAX",
                                   "LGA","MIA","MSP","ORD","PDX","PHL","PHX","SEA","SFO","SLC"),1,0),
          multi_ap = ifelse(code %in% c("JFK","EWR","LGA","LAX","BUR","LGB","ONT","SNA","PSP","DCA","IAD",
@@ -332,8 +310,87 @@ ap_metro <- airports_metro%>%
   filter(!is.na(Metroname),
          code %ni% eliminated_AP)
 
-all_new_AP <- left_join(ap_metro, all_new_AP, by = "code")
+APdata <- left_join(ap_metro, APdata, by = "code")
 
 
 ######categories#####
-all_new_AP <- left_join(all_new_AP, categories, by = "code")
+APdata <- left_join(APdata, categories, by = "code")
+
+
+##Calculate degree of nodes
+DNdata <- RTdata
+DNdata[,3:12]<- ifelse(DNdata[,3:12]>0,1,0)
+
+
+
+DN1_tmp <- DNdata%>%
+  group_by(AP1)%>%
+  summarise(flight19 = sum(flight19),
+            flight20 = sum(flight20),
+            wk1_19 = sum(wk1_19),
+            wk2_19 = sum(wk2_19),
+            wk3_19 = sum(wk3_19),
+            wk4_19 = sum(wk4_19),
+            wk1_20 = sum(wk1_20),
+            wk2_20 = sum(wk2_20),
+            wk3_20 = sum(wk3_20),
+            wk4_20 = sum(wk4_20))
+
+DN2_tmp <- DNdata%>%
+  group_by(AP2)%>%
+  summarise(flight19 = sum(flight19),
+            flight20 = sum(flight20),
+            wk1_19 = sum(wk1_19),
+            wk2_19 = sum(wk2_19),
+            wk3_19 = sum(wk3_19),
+            wk4_19 = sum(wk4_19),
+            wk1_20 = sum(wk1_20),
+            wk2_20 = sum(wk2_20),
+            wk3_20 = sum(wk3_20),
+            wk4_20 = sum(wk4_20))
+
+DNdata <- merge(DN1_tmp, DN2_tmp, by.x = "AP1", by.y = "AP2", all = TRUE)
+DNdata[is.na(DNdata)] <- 0
+DNdata <- DNdata%>%
+  mutate(flight19 = flight19.x + flight19.y,
+         flight20 = flight20.x + flight20.y,
+         wk1_19 = wk1_19.x + wk1_19.y,
+         wk2_19 = wk2_19.x + wk2_19.y,
+         wk3_19 = wk3_19.x + wk3_19.y,
+         wk4_19 = wk4_19.x + wk4_19.y,
+         wk1_20 = wk1_20.x + wk1_20.y,
+         wk2_20 = wk2_20.x + wk2_20.y,
+         wk3_20 = wk3_20.x + wk3_20.y,
+         wk4_20 = wk4_20.x + wk4_20.y)%>%
+  dplyr::select(AP1,
+                flight19,
+                flight20,
+                wk1_19,
+                wk2_19,
+                wk3_19,
+                wk4_19,
+                wk1_20,
+                wk2_20,
+                wk3_20,
+                wk4_20)%>%
+  rename(code = AP1,
+         degree19=flight19,
+         degree20=flight20)
+
+
+######hubs and multi_ap#####
+DNdata <- DNdata%>%
+  mutate(hub = ifelse(code %in% c("ANC","ATL","BOS","CLT","CVG","DCA","DEN","DFW","DTW","EWR","IAD","IAH","JFK","LAX",
+                                  "LGA","MIA","MSP","ORD","PDX","PHL","PHX","SEA","SFO","SLC"),1,0),
+         multi_ap = ifelse(code %in% c("JFK","EWR","LGA","LAX","BUR","LGB","ONT","SNA","PSP","DCA","IAD",
+                                       "BWI","HGR","CHO","MDT","IAH","HOU","ORD","MDW","RFD","BMI","SBN",
+                                       "GYY","FWA","DAL","DFW"),1,0))
+#####metro#####
+
+
+DNdata <- left_join(ap_metro, DNdata, by = "code")
+
+
+######categories#####
+DNdata <- left_join(DNdata, categories, by = "code")
+
