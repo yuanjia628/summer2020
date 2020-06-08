@@ -32,6 +32,10 @@ categories <- read.csv("airportsize2019.csv")
 mkt2019 <- read.csv("032019_new.csv")
 mkt2020 <- read.csv("032020_new.csv")
 
+#ASPM data for historic operations data
+ops2019 <- read.csv("D:/aviation2020/032019_Ops.csv")
+ops2020 <- read.csv("D:/aviation2020/032020_Ops.csv")
+
 #HI,PR,AS airports
 eliminated_AP <- c("ADQ", "AKN", "ANC", "BET", "BQN", "ENA", "FAI",
                    "HNL", "ITO", "JNU", "JRF", 'KOA', "LIH", "MKK",
@@ -317,6 +321,10 @@ APdata <- left_join(ap_metro, APdata, by = "code")
 APdata <- left_join(APdata, categories, by = "code")
 
 
+#####Total Ops 2019#####
+APdata <- left_join(APdata, ops2019, by = "code")
+
+
 ##Calculate degree of nodes
 DNdata <- RTdata
 DNdata[,3:12]<- ifelse(DNdata[,3:12]>0,1,0)
@@ -393,4 +401,8 @@ DNdata <- left_join(ap_metro, DNdata, by = "code")
 
 ######categories#####
 DNdata <- left_join(DNdata, categories, by = "code")
+
+#####Total Ops 2019#####
+DNdata <- left_join(DNdata, ops2019, by = "code")
+
 
