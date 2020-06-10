@@ -39,7 +39,7 @@ ops2020 <- read.csv("D:/aviation2020/032020_Ops.csv")
 #HI,PR,AS airports
 eliminated_AP <- c("ADQ", "AKN", "ANC", "BET", "BQN", "ENA", "FAI",
                    "HNL", "ITO", "JNU", "JRF", 'KOA', "LIH", "MKK",
-                   "MRI", "OGG", "SIG", "SJU")
+                   "MRI", "OGG", "SIG", "SJU","PSE")
 
 
 #####2019 data cleaning#####
